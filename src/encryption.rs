@@ -1,6 +1,6 @@
 use super::error::FileTransferError as Error;
-use aes::block_cipher::generic_array::typenum::Unsigned;
-use aes::Aes128;
+use aes::{block_cipher::generic_array::typenum::Unsigned, BlockCipher};
+use aes::{Aes128, NewBlockCipher};
 use block_modes::{block_padding::Pkcs7, BlockMode, Cbc};
 use hmac::{Hmac, Mac, NewMac};
 use rand::Rng;
@@ -12,8 +12,11 @@ type Aes128Cbc = Cbc<Aes128, Pkcs7>;
 type HmacSha256 = Hmac<Sha256>;
 
 pub fn encrypt(data: &[u8], key: &[u8]) -> Result<Vec<u8>, Error> {
+    let iv_size = <Aes128Cbc as BlockMode<Aes128, Pkcs7>>::IvSize::USIZE;
+    let key_size = <Aes128 as NewBlockCipher>::KeySize::USIZE;
+
     let iv = new_iv();
-    let cipher = Aes128Cbc::new_var(key, &iv[..])?;
+    let cipher = Aes128Cbc::new_var(&key[..key_size], &iv[..iv_size])?;
 
     let cipher_text = cipher.encrypt_vec(&data);
     let mut full_cipher = Vec::from(&iv[..]);
@@ -36,14 +39,16 @@ pub fn encrypt(data: &[u8], key: &[u8]) -> Result<Vec<u8>, Error> {
 }
 
 pub fn decrypt(full_cipher: &[u8], key: &[u8]) -> Result<Vec<u8>, Error> {
-    let iv_size = <Aes128Cbc as BlockMode<Aes128, Pkcs7>>::IvSize::to_usize();
-    let hmac_size = <HmacSha256 as Mac>::OutputSize::to_usize();
+    let iv_size = <Aes128Cbc as BlockMode<Aes128, Pkcs7>>::IvSize::USIZE;
+    let hmac_size = <HmacSha256 as Mac>::OutputSize::USIZE;
+    let key_size = <Aes128 as NewBlockCipher>::KeySize::USIZE;
+
     let iv = &full_cipher[0..iv_size];
     let cipher_text = &full_cipher[iv_size..full_cipher.len() - hmac_size];
     let mac_input = &full_cipher[0..full_cipher.len() - hmac_size];
     let mac_act = &full_cipher[full_cipher.len() - hmac_size..];
 
-    let cipher = Aes128Cbc::new_var(key, iv)?;
+    let cipher = Aes128Cbc::new_var(&key[..key_size], &iv[..iv_size])?;
     let plain_text = cipher.decrypt_vec(cipher_text)?;
 
     // Create HMAC-SHA256 instance which implements `Mac` trait

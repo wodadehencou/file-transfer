@@ -7,8 +7,10 @@ mod server;
 use clap::{App, Arg};
 use error::FileTransferError as Error;
 use sha2::{Digest, Sha256};
-use std::io::{Read, Write};
-use std::{convert::TryInto, fs::File};
+use std::{
+    fs::File,
+    io::{Read, Write},
+};
 
 fn main() {
     env_logger::init();
@@ -99,13 +101,15 @@ fn server(addr: &str, file: &str, password: &str) -> Result<(), Error> {
     Ok(())
 }
 
-fn get_password<'a>(s: &'a str) -> [u8; 16] {
+fn get_password<'a>(s: &'a str) -> [u8; 32] {
     let mut h = Sha256::default();
     h.update(s.as_bytes());
     let hash = h.finalize();
-    let hash = hash.as_slice();
-    let hash = &hash[..16];
-    hash.try_into().unwrap()
+    hash.into()
+    // let hash = hash.as_slice();
+    // let hash = &hash[..16];
+    // hash.to_owned()
+    // hash.try_into().unwrap()
 }
 
 #[cfg(test)]
@@ -120,7 +124,7 @@ mod test {
         env_logger::init();
         println!("Hello, world!");
 
-        let svr_password = rand::thread_rng().gen::<[u8; 16]>();
+        let svr_password = get_password("password");
         let cli_password = svr_password;
 
         let svr_handler = thread::spawn(move || {
