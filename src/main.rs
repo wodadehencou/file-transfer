@@ -64,7 +64,7 @@ fn main() {
     }
 }
 
-const BUFFER_SIZE: usize = 1500;
+const BUFFER_SIZE: usize = 256 * 1024;
 
 fn client(server: &str, file: &str, password: &str) -> Result<(), Error> {
     let cli = client::Client::new(server);
@@ -106,17 +106,12 @@ fn get_password<'a>(s: &'a str) -> [u8; 32] {
     h.update(s.as_bytes());
     let hash = h.finalize();
     hash.into()
-    // let hash = hash.as_slice();
-    // let hash = &hash[..16];
-    // hash.to_owned()
-    // hash.try_into().unwrap()
 }
 
 #[cfg(test)]
 mod test {
 
     use super::*;
-    use rand::Rng;
     use std::{thread, time};
 
     #[test]

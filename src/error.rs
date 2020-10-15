@@ -4,6 +4,8 @@ use thiserror::Error;
 pub enum FileTransferError {
     #[error("magic header is not match")]
     InvalidHeader,
+    #[error("return length is not match")]
+    InvalidLength,
     #[error("hmac fail")]
     HmacVerifyFail,
     #[error(transparent)]

@@ -1,5 +1,5 @@
 use super::error::FileTransferError as Error;
-use aes::{block_cipher::generic_array::typenum::Unsigned, BlockCipher};
+use aes::block_cipher::generic_array::typenum::Unsigned;
 use aes::{Aes128, NewBlockCipher};
 use block_modes::{block_padding::Pkcs7, BlockMode, Cbc};
 use hmac::{Hmac, Mac, NewMac};
